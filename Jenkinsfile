@@ -2,6 +2,13 @@ pipeline {
   agent any
 
   stages {
+    stage('Checkout') {
+      steps {
+        // يسحب الكود من GitHub باستخدام الإعدادات اللي اخترتها في Jenkins Job
+        checkout scm
+      }
+    }
+
     stage('Build') {
       steps {
         echo "Building docker images..."

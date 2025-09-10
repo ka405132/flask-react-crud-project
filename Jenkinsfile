@@ -4,28 +4,38 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                git branch: 'main', 
-                    url: 'https://github.com/ka405132/flask-react-crud-project.git',
-                    credentialsId: 'github-token'
+                git branch: 'main',
+                    url: 'https://github.com/ka405132/flask-react-crud-project.git'
             }
         }
 
-        stage('Build') {
+        stage('Build Docker Images') {
             steps {
                 sh 'docker compose build'
             }
         }
 
-        stage('Deploy') {
+        stage('Run Containers') {
             steps {
                 sh 'docker compose up -d'
             }
         }
 
-        stage('Smoke Test') {
+        stage('Verify Services') {
             steps {
-                sh 'sleep 10 && curl -f http://localhost:5000/items'
+                sh 'docker ps'
+                sh 'curl -f http://localhost:5000 || exit 1'
+                sh 'curl -f http://localhost:3000 || exit 1'
             }
+        }
+    }
+
+    post {
+        success {
+            echo '🚀 Deployment successful! Flask & React are up.'
+        }
+        failure {
+            echo '❌ Build failed. Check logs.'
         }
     }
 }

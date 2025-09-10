@@ -1,17 +1,60 @@
-version: "3.9"
+pipeline {
+    agent any
 
-services:
-  backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    ports:
-      - "5000:5000"
+    environment {
+        // لو عايز تحط متغيرات عامة للمشروع
+        PROJECT_NAME = "flask-react-crud-project"
+    }
 
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    ports:
-      - "3000:3000"
+    stages {
+
+        stage('Checkout SCM') {
+            steps {
+                // تأكد من جلب آخر نسخة من الريبو
+                checkout([$class: 'GitSCM', 
+                          branches: [[name: '*/main']], 
+                          userRemoteConfigs: [[url: 'https://github.com/ka405132/flask-react-crud-project.git']]
+                ])
+            }
+        }
+
+        stage('Build Docker Images') {
+            steps {
+                
+                dir("${WORKSPACE}") {
+                    sh 'docker compose build'
+                }
+            }
+        }
+
+        stage('Run Containers') {
+            steps {
+                dir("${WORKSPACE}") {
+                    sh 'docker compose up -d'
+                }
+            }
+        }
+
+        stage('Verify Services') {
+            steps {
+                echo "Services should now be running. You can add healthchecks or curl commands here."
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "✅ Build and deployment completed successfully!"
+        }
+        failure {
+            echo "❌ Build failed. Check the logs!"
+        }
+        always {
+            dir("${WORKSPACE}") {
+              
+                sh 'docker compose down || true'
+            }
+        }
+    }
+}
 
